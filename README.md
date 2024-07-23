@@ -1,2 +1,2 @@
 # eCon Noise Excel
- This is a repository for noise testing of electircal slip rings. The noise testing exports excel sheets, but there is a need to combine 200+ excel sheets as once and then making graphes corresponding to each column.
+ This is a repository for noise testing of electrical slip rings. The noise testing exports Excel sheets, but 200+ Excel sheets need to be combined at once and then graphs made corresponding to each column.
