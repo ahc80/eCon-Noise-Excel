@@ -4,34 +4,34 @@ import os
 import glob
 
 def combineExcelFiles(folderPath):
-    # Define the Excel file pattern
-    filePattern = os.path.join(folderPath, '*.xlsx')
-    # List all Excel files in the folder
+    filePattern = os.path.join(folderPath, '*.xlsx')  # Ensure this matches your file extension
+    print(f"Looking for files with pattern: {filePattern}")  # Debug print to check the file pattern
+    
     excelFiles = glob.glob(filePattern)
+    print(f"Files found: {excelFiles}")  # Debug print to check the files list
 
-    # Combine all Excel files into one DataFrame
     combinedDf = pd.DataFrame()
+
+    if not excelFiles:
+        print("No Excel files found. Please check the folder and file extensions.")
+        return combinedDf
+
     for file in excelFiles:
         df = pd.read_excel(file)
+        print(f"Data from {file}: {df.head()}")  # Debug print to show data being read
         combinedDf = pd.concat([combinedDf, df], ignore_index=True)
 
-    # Save the combined DataFrame to a new Excel file
     combinedDf.to_excel('combinedExcel.xlsx', index=False)
-
     return combinedDf
 
-def plotColumns(dataframe):
-    # Plot each column as a separate graph
-    for column in dataframe.columns:
+def plotColumns(data):
+    for column in data.columns:
         plt.figure()
-        dataframe[column].plot(kind='line')
+        data[column].plot(kind='line')
         plt.title(f'Graph for {column}')
-        plt.ylabel(column)
+        plt.ylabel('Value')
         plt.xlabel('Index')
-        plt.savefig(f'{column}.png')  # Save the plot as a PNG file
+        plt.savefig(f'{column.replace("/", "_").replace(" ", "_")}.png')
         plt.close()
 
-# Use these functions
-folderPath = 'path_to_your_folder_with_excels'
-combinedDf = combineExcelFiles(folderPath)
-plotColumns(combinedDf)
+# Integrate these functions into your existing PyQt6 setup for GUI interaction
