@@ -32,7 +32,7 @@ class FileSelector(QWidget):
         self.setGeometry(500, 500, 400, 300)
 
     def showDialog(self):
-        options = QFileDialog.Option
+        options = QFileDialog.Option.ShowDirsOnly
         folderPath = QFileDialog.getExistingDirectory(self, 'Select Folder', options=options)
         if folderPath:
             self.filesLabel.setText(folderPath)
