@@ -1,9 +1,10 @@
-from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel, QHBoxLayout
 import sys
-import pandas as pd
-import matplotlib.pyplot as plt
 import os
 import glob
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel, QHBoxLayout
 
 class FileSelector(QWidget):
     def __init__(self):
@@ -13,7 +14,7 @@ class FileSelector(QWidget):
     def initUI(self):
         mainLayout = QVBoxLayout(self)
 
-        self.selectButton = QPushButton('Select Folder with Excel Files', self)
+        self.selectButton = QPushButton('Select Folder with CSV Files', self)
         self.selectButton.clicked.connect(self.showDialog)
 
         self.filesLabel = QLabel('No folder selected', self)
@@ -28,52 +29,52 @@ class FileSelector(QWidget):
         mainLayout.addLayout(labelLayout)
 
         self.setLayout(mainLayout)
-        self.setWindowTitle('Excel File Selector')
+        self.setWindowTitle('CSV File Merger and Plotter')
         self.setGeometry(500, 500, 400, 300)
 
     def showDialog(self):
         options = QFileDialog.Option.ShowDirsOnly
         folderPath = QFileDialog.getExistingDirectory(self, 'Select Folder', options=options)
         if folderPath:
-            self.filesLabel.setText(folderPath)
-            data = combineExcelFiles(folderPath)
+            self.filesLabel.setText('Processing...')
+            data = self.combineCSVFiles(folderPath)
             if not data.empty:
-                plotColumns(data)
-                self.filesLabel.setText('Processing Complete! Check the folder for results and combined Excel file.')
+                self.saveData(folderPath, data)
+                self.plotColumns(data)
+                self.filesLabel.setText('Processing Complete! Check the folder for results and combined CSV file.')
             else:
-                self.filesLabel.setText('No Excel files found or combined data is empty.')
+                self.filesLabel.setText('No CSV files found or combined data is empty.')
 
-def combineExcelFiles(folderPath):
-    filePattern = os.path.join(folderPath, '*.xlsx')
-    excelFiles = glob.glob(filePattern)
-    print(f"Files found: {excelFiles}")
+    def combineCSVFiles(self, folderPath):
+        filePattern = os.path.join(folderPath, '*.csv')
+        csvFiles = glob.glob(filePattern)
+        combinedDf = pd.DataFrame()
 
-    combinedDf = pd.DataFrame()
+        for file in csvFiles:
+            try:
+                # Use header=None to prevent automatic header detection, then skiprows to start from the correct data row
+                df = pd.read_csv(file, header=None, skiprows=6)  
+                df.columns = df.iloc[0]  # Set the column headers from the first row (index 0 after skiprows)
+                df = df[1:]  # Remove the header row from the data
+                combinedDf = pd.concat([combinedDf, df], ignore_index=True)
+            except Exception as e:
+                print(f"Could not read {file}: {e}")
 
-    if not excelFiles:
-        print("No Excel files found. Please check the folder and file extensions.")
         return combinedDf
 
-    for file in excelFiles:
-        try:
-            df = pd.read_excel(file)
-            print(f"Data from {file}: {df.head()}")
-            combinedDf = pd.concat([combinedDf, df], ignore_index=True)
-        except Exception as e:
-            print(f"Could not read {file}: {e}")
+    def saveData(self, folderPath, data):
+        output_path = os.path.join(folderPath, 'combinedCSV.csv')
+        data.to_csv(output_path, index=False)
 
-    combinedDf.to_excel('combinedExcel.xlsx', index=False)
-    return combinedDf
-
-def plotColumns(data):
-    for column in data.columns:
-        plt.figure()
-        data[column].plot(kind='line')
-        plt.title(f'Graph for {column}')
-        plt.ylabel('Value')
-        plt.xlabel('Index')
-        plt.savefig(f'{column.replace("/", "_").replace(" ", "_")}.png')
-        plt.close()
+    def plotColumns(self, data):
+        numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
+        for column in numeric_cols:
+            plt.figure()
+            data.plot(kind='scatter', x=data.index, y=column, title=f'Scatter Plot for {column}')
+            plt.ylabel('Value')
+            plt.xlabel('Index')
+            plt.savefig(f'{column.replace("/", "_").replace(" ", "_")}.png')
+            plt.close()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
