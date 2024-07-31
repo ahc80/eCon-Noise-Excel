@@ -3,6 +3,7 @@ import os
 import glob
 import numpy as np
 import pandas as pd
+import xlsxwriter
 import matplotlib.pyplot as plt
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel, QHBoxLayout
 
@@ -40,7 +41,6 @@ class FileSelector(QWidget):
             data = self.combineCSVFiles(folderPath)
             if not data.empty:
                 self.saveData(folderPath, data)
-                self.plotColumns(data)
                 self.filesLabel.setText('Processing Complete! Check the folder for results and combined CSV file.')
             else:
                 self.filesLabel.setText('No CSV files found or combined data is empty.')
@@ -56,6 +56,7 @@ class FileSelector(QWidget):
                 df = pd.read_csv(file, header=None, skiprows=6)  
                 df.columns = df.iloc[0]  # Set the column headers from the first row (index 0 after skiprows)
                 df = df[1:]  # Remove the header row from the data
+                df = df.apply(pd.to_numeric, errors='coerce')                 
                 combinedDf = pd.concat([combinedDf, df], ignore_index=True)
             except Exception as e:
                 print(f"Could not read {file}: {e}")
@@ -63,18 +64,28 @@ class FileSelector(QWidget):
         return combinedDf
 
     def saveData(self, folderPath, data):
-        output_path = os.path.join(folderPath, 'combinedCSV.csv')
-        data.to_csv(output_path, index=False)
+        output_path = os.path.join(folderPath, 'combinedCSV.xlsx')
+        writer = pd.ExcelWriter(output_path, engine='xlsxwriter')
+        data.to_excel(writer, sheet_name='Data', index=False)
 
-    def plotColumns(self, data):
-        numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
-        for column in numeric_cols:
-            plt.figure()
-            data.plot(kind='scatter', x=data.index, y=column, title=f'Scatter Plot for {column}')
-            plt.ylabel('Value')
-            plt.xlabel('Index')
-            plt.savefig(f'{column.replace("/", "_").replace(" ", "_")}.png')
+        # Dynamically identify "AI" columns and plot against "Date/Time"
+        timeColumn = [col for col in data.columns if 'Date/Time' in col]  # Assumes the second column is the time
+        # data[timeColumn] = pd.to_datetime(data[timeColumn], errors='coerce')
+        aiColumns = [col for col in data.columns if 'AI' in col]
+
+        workbook = writer.book
+        for column in aiColumns:
+            fig, ax = plt.subplots()
+            data.plot(x='Date/Time', y=column, kind='line', ax=ax, title=f'Plot for {column}')
+            image_path = os.path.join(folderPath, f'{column}.png')
+            plt.savefig(image_path)
             plt.close()
+
+            # Create a new worksheet for each plot
+            worksheet = workbook.add_worksheet(name=f'Plot_{column}')
+            worksheet.insert_image('B2', image_path)
+
+        writer.close()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
