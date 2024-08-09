@@ -7,6 +7,7 @@ import xlsxwriter
 import datetime
 import matplotlib.pyplot as plt
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel, QHBoxLayout
+from matplotlib.dates import DateFormatter, AutoDateLocator, MinuteLocator, SecondLocator
 
 class FileSelector(QWidget):
     def __init__(self):
@@ -78,7 +79,6 @@ class FileSelector(QWidget):
         colormap = plt.get_cmap('viridis')
         colors = colormap(np.linspace(0, 1, len(data.columns) - 1))
 
-        # Plot all AI columns on one graph
         for idx, column in enumerate([col for col in data.columns if 'AI' in col]):
             data.plot(x='Date/Time', y=column, ax=ax, color=colors[idx], label=column)
 
@@ -89,17 +89,18 @@ class FileSelector(QWidget):
 
         ax.set_ylim(0, 12)
 
-        dateFormat = "%Y-%m-%d %H:%M:%S"  # Adjust this format to match your 'Date/Time' column
-        startDate = datetime.datetime.strptime('2024-01-01 00:00:00', dateFormat)
-        endDate = datetime.datetime.strptime('2024-12-31 23:59:59', dateFormat)
-        ax.set_xlim(startDate, endDate)
-        ax.xaxis.set_major_formatter(plt.FixedFormatter(dateFormat))
+        # Date formatting and ticks adjustment
+        ax.xaxis.set_major_formatter(DateFormatter("%Y-%m-%d %H:%M:%S"))
+        # Customizing the locator to handle high frequency data
+        ax.xaxis.set_major_locator(SecondLocator(interval=30))  # Adjust interval based on your data density
+
+        min_date, max_date = data['Date/Time'].min(), data['Date/Time'].max()
+        ax.set_xlim(min_date, max_date)
 
         image_path = os.path.join(folderPath, 'combined_plot.png')
         plt.savefig(image_path)
         plt.close()
 
-        # Create a worksheet for the combined plot
         worksheet = writer.book.add_worksheet(name='Combined Plot')
         worksheet.insert_image('B2', image_path)
 
