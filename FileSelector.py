@@ -88,7 +88,6 @@ class FileSelector(QWidget):
         ax.legend(title='Legend')
 
         ax.set_ylim(0, 12)
-
         # Date formatting and ticks adjustment
         ax.xaxis.set_major_formatter(DateFormatter("%Y-%m-%d %H:%M:%S"))
         # Customizing the locator to handle high frequency data

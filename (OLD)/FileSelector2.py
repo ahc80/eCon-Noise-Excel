@@ -56,15 +56,13 @@ class FileSelector(QWidget):
 
         for file in csvFiles:
             try:
-                # Use header=None to prevent automatic header detection, then skiprows to start from the correct data row
                 df = pd.read_csv(file, header=None, skiprows=6)  
-                df.columns = df.iloc[0]  # Set the column headers from the first row (index 0 after skiprows)
-                df = df[1:]  # Remove the header row from the data
+                df.columns = df.iloc[0]  # Set the column headers from the first row
+                df = df[1:]  # Remove the header row
                 
-                # Preserve 'Date/Time' as datetime, convert other columns to numeric
-                df['Date/Time'] = pd.to_datetime(df['Date/Time'], errors='coerce')  # Ensure Date/Time is converted
-                numeric_cols = df.columns.drop('Date/Time')  # All columns except Date/Time
-                df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')  # Convert numeric columns
+                df['Date/Time'] = pd.to_datetime(df['Date/Time'], errors='coerce')
+                numeric_cols = df.columns.drop('Date/Time')
+                df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
             
                 combinedDf = pd.concat([combinedDf, df], ignore_index=True)           
             except Exception as e:
@@ -77,17 +75,11 @@ class FileSelector(QWidget):
         writer = pd.ExcelWriter(outputPath, engine='xlsxwriter')
         data.to_excel(writer, sheet_name='Data', index=False)
 
-        # Creating a simple macro
-        vba_code = """
-    Sub Auto_Open()
-        MsgBox "Welcome to your combined CSV data!", vbInformation
-    End Sub
-        """
+        # Path to the VBA project .bin file
+        vba_project_path = 'path_to_your_vba_project.bin'
 
-        # Adding the macro to the workbook
-        writer.book.filename = outputPath
-        writer.book.add_vba_project()
-        writer.book.add_vba_code(vba_code)
+        # Adding the VBA project to the workbook
+        writer.book.add_vba_project(vba_project_path)
         
         writer.close()
 
