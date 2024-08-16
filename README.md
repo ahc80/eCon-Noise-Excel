@@ -2,7 +2,7 @@
 
 ## Overview
 
-`FileSelector` is a Python-based GUI application that allows users to select a folder containing CSV files, automatically merge them into a single Excel file, and generate a plot based on the data. The application is designed to handle CSV files with a specific structure and outputs both a combined Excel file and a visual plot of the data.
+`FileSelector` is a Python-based GUI application that allows users to select a folder containing CSV files, automatically merge them into a single Excel file, and generate a plot based on the data. The application is designed to handle CSV files with a specific structure and outputs both a combined Excel file and a visual plot of the data. The output should be within the Folder that was used for the merging process.
 
 ## Features
 
